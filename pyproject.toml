@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vte"
+version = "0.1.0"
+description = "Video Text Extractor: extract Korean on-screen text and time intervals from video"
+requires-python = ">=3.10"
+dependencies = [
+    "opencv-python-headless>=4.8",
+    "numpy>=1.24",
+    "rapidfuzz>=3.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=7.0", "pytest-cov"]
+ocr = ["paddleocr>=3.1", "paddlepaddle>=3.0"]
+
+[project.scripts]
+vte = "vte.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-q"

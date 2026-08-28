@@ -1,0 +1,12 @@
+# Core (필수)
+opencv-python-headless>=4.8
+numpy>=1.24
+rapidfuzz>=3.0
+
+# OCR 엔진 (설치 후 detector/recognizer 활성화)
+paddleocr>=3.1
+paddlepaddle>=3.0
+
+# 개발
+pytest>=7.0
+pytest-cov
