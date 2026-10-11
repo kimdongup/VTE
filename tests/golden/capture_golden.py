@@ -41,7 +41,7 @@ def main() -> None:
             "rec_model": cfg.rec_model,
             "sample_fps": cfg.sample_fps,
             "roi_band": list(cfg.roi_band) if cfg.roi_band else None,
-            "det_max_width": cfg.det_max_width,
+            "det_max_side": cfg.det_max_side,
             "created": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         },
         "events": [

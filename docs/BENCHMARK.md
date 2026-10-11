@@ -196,7 +196,7 @@ B(fast+roi) 5개 전체:
 - 영상: `claude_first60s.mp4` (저장소 루트)
   (1920x1080, 60초 클립만 사용)
 - 대상: coder가 반영한 `Config.for_mode("fast")` = mobile det +
-  `det_max_width=960`. 기준선은 위 "Real video first-minute" 섹션의
+  `det_max_side=960`. 기준선은 위 "Real video first-minute" 섹션의
   A(원본 폭) / B(fast+roi).
 - 범위: `run_extract(video, cfg, start=0.0, end=60.0)`, 각 설정 1회.
 - 환경 변수: `OMP_NUM_THREADS=8`.
@@ -210,7 +210,7 @@ B(fast+roi) 5개 전체:
 | OS | macOS 15.7.9 |
 | CPU | Intel(R) Core(TM) i9-9880H @ 2.30GHz (8코어/16스레드) |
 | Python | 3.11.11 (.venv) |
-| OCR | PaddleOCR CPU, det=PP-OCRv5_mobile_det + det_max_width=960, rec=korean_PP-OCRv5_mobile_rec |
+| OCR | PaddleOCR CPU, det=PP-OCRv5_mobile_det + det_max_side=960, rec=korean_PP-OCRv5_mobile_rec |
 
 ### 결과 표
 
@@ -246,7 +246,7 @@ B(fast+roi) 5개 전체:
   20개)과 **20개 이벤트 전부 텍스트·시각 완전 일치** — 소실된 소형 UI
   텍스트는 트래킹/투표 단계에서 이미 걸러지던 것들이어서 골든 대비
   리콜 손실 없음.
-- 단 주의: **골든 자체도 det_max_width=960으로 캡처되어 있어**(meta 참조)
+- 단 주의: **골든 자체도 det_max_side=960으로 캡처되어 있어**(meta 참조)
   "원본 폭 대비 리콜"은 위 프레임 프로브로만 판단 가능. 즉 960 축소는
   화면 중앙부 소형 UI 텍스트를 포착하지 못하며, 자막(하단 대형 텍스트)
   용도로는 안전.
@@ -255,7 +255,7 @@ B(fast+roi) 5개 전체:
 
 1. **fast = 현재 구조(mobile + 960) 유지 적합**: 기준선 대비 2배 향상,
    골든 무손실. 자막 추출 주 용도 기준 리콜 문제 없음.
-2. **auto에도 det_max_width 상한 필수**: server det은 원본 1080p에서
+2. **auto에도 det_max_side 상한 필수**: server det은 원본 1080p에서
    미완료(30분+, 전 섹션)였으므로 auto/precise가 1280 상한을 쓰는 현행
    config가 정상 동작의 전제. 원본 폭 경로는 남겨두지 않을 것.
 3. **roi+960 조합(B')은 속도 대비 품질 손실 커서 프리셋 후보 부적합**:

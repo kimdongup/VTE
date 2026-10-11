@@ -6,7 +6,7 @@
     "rec_model": "korean_PP-OCRv5_mobile_rec",
     "sample_fps": 2.0,
     "roi_band": null,
-    "det_max_width": 960,
+    "det_max_side": 960,
     "created": "2026-08-26T09:37:23+00:00"
   },
   "events": [

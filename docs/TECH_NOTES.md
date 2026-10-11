@@ -153,20 +153,25 @@ bounding rect로 변환한다(회전 텍스트는 후순위).
 
 ## Det downscale & small-text rec (2026-08-25)
 
-### ① det_max_width (detector 입력 다운스케일)
+### ① det_max_side (detector 입력 다운스케일, 긴 변 기준)
 
-- config.py: `det_max_width: int | None = 1280` 추가(None=원본 크기).
-- detector.py: roi_band **밴드 크롭을 먼저** 하고 그 결과가 det_max_width보다
-  넓으면 비율 유지 축소(cv2.INTER_AREA) 후 predict. 좌표 복원은 x/y 축별 배율
-  (원본폭/축소폭)을 곱하고 y_offset을 나중에 더하는 순서라 밴드 오프셋이
-  원본 좌표계에서 정확히 유지된다(밴드→축소 순서 채택: 이 순서는 y_offset이
-  스케일과 무관하게 되므로 왜곡 없음 / 축소→밴드 순서는 밴드 비율 계산이
-  축소된 프레임 기준이 되어 매번 환산이 필요해 실수 여지가 있음).
-  min/max_box_height 필터도 복원된 원본 좌표 높이로 평가됨.
+- config.py: `det_max_side: int | None = 1280` 추가(None=원본 크기).
+- detector.py: roi_band **밴드 크롭을 먼저** 하고 그 결과의 **긴 변(longest
+  side)** 이 det_max_side보다 크면 비율 유지 축소(cv2.INTER_AREA) 후 predict.
+  좌표 복원은 x/y 축별 배율(원본/축소)을 곱하고 y_offset을 나중에 더하는
+  순서라 밴드 오프셋이 원본 좌표계에서 정확히 유지된다(밴드→축소 순서 채택:
+  이 순서는 y_offset이 스케일과 무관하게 되므로 왜곡 없음 / 축소→밴드 순서는
+  밴드 비율 계산이 축소된 프레임 기준이 되어 매번 환산이 필요해 실수 여지가
+  있음). min/max_box_height 필터도 복원된 원본 좌표 높이로 평가됨.
+- **긴 변 기준 근거(2026-10-10 수정)**: 본래 폭(width) 기준이었으나, 세로 영상
+  (예: 모바일 화면 녹화 826x1460)에서는 폭 826 < 상한 960이라 다운스케일이 아예
+  스킵되어 매 프레임을 원본 1460px 높이로 검출하는 버그가 있었다(프레임당
+  7.3s). 가로 영상(1920x1080)에서는 폭=최대 변이라 폭 기준과 longest-side 기준
+  결과가 동일하므로 기존 회귀 없음. 이름도 width→side로 정직화.
 - for_mode 실측 기반 확정:
-  - fast = mobile det + det_max_width=960
-  - auto = server det + det_max_width=1280 (Config() 기본값과 동일)
-  - precise = server det + det_max_width=**1280** (과제안의 None(원본)은
+  - fast = mobile det + det_max_side=960
+  - auto = server det + det_max_side=1280 (Config() 기본값과 동일)
+  - precise = server det + det_max_side=**1280** (과제안의 None(원본)은
     기각 — server det @1920x1080은 미완료 30분+ 실측이므로 feasible 한계인
     1280으로 상한 고정)
 - 실측(claude_first60s.mp4 t=5/15/25s 프레임 1920x1080, OMP_NUM_THREADS=8,
@@ -187,6 +192,19 @@ bounding rect로 변환한다(회전 텍스트는 후순위).
   - **주의(리콜)**: frame15에서 축소 시 box 수 감소(5→3→2, 소형 박스 소멸).
     다운스케일은 속도·리콜 트레이드오프. benchmarker 재측정 시 박스 수/
     누락 텍스트 비교 필요.
+
+- 세로 영상 추가 실측(화면 기록 2026-10-06.mov, 826x1460, t=300프레임,
+  2026-10-10, longest-side 기준 프레임당 det 시간):
+
+  | det_max_side | 프레임당 | box 수 |
+  |---|---|---|
+  | 960 (긴 변 1460 → 543x960) | ~3.0s | 10 |
+  | 720 (→ 407x720) | ~3.0s | 10 |
+  | 420 (→ 238x420) | ~1.7s | 7 |
+
+  - 폭 기준(구)으로는 826 < 960이라 축소 스킵 → 프레임당 7.3s(원본). 긴 변
+    기준 960이면 약 2.4배 가속.
+
 
 ### ② 소형 텍스트 rec 최소 높이 보장
 

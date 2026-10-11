@@ -49,14 +49,20 @@ class TextDetector:
             if y1 > y0:
                 y_offset = y0
                 target = image[y0:y1]
-        # Downscale wide inputs before detection. The band crop happens
-        # first (in original coordinates); after downscaling, points are
-        # restored with a per-axis factor so band offset stays exact.
-        max_width = self.cfg.det_max_width
-        if max_width is not None and target.shape[1] > max_width:
-            h, w = target.shape[:2]
-            new_w = max_width
-            new_h = max(1, int(round(h * (new_w / w))))
+        # Downscale the detection input so its LONGEST side fits the cap. Using
+        # the longest side (not width) makes the cap effective on portrait /
+        # vertical video too: a 826x1460 frame with a width cap of 960 would
+        # skip downscaling entirely (826 < 960) and run detection at full 1460
+        # height. The band crop happens first (in original coordinates); after
+        # downscaling, points are restored with a per-axis factor so band offset
+        # stays exact.
+        max_side = self.cfg.det_max_side
+        h, w = target.shape[:2]
+        longest = max(h, w)
+        if max_side is not None and longest > max_side:
+            scale = max_side / longest
+            new_w = max(1, int(round(w * scale)))
+            new_h = max(1, int(round(h * scale)))
             target = cv2.resize(
                 target, (new_w, new_h), interpolation=cv2.INTER_AREA
             )

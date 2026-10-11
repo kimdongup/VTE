@@ -23,7 +23,10 @@ class Config:
     rec_model: str = "korean_PP-OCRv5_mobile_rec"
     det_model: str = "PP-OCRv5_server_det"
     roi_band: tuple[float, float] | None = None
-    det_max_width: int | None = 1280
+    # Downscale the detection input so its LONGEST side does not exceed this.
+    # Longest-side (not width) so the cap actually binds on portrait/vertical
+    # video, where width < height and a width-only cap would be a no-op.
+    det_max_side: int | None = 1280
     upscale_small: bool = True
     min_box_height: int = 8
     max_box_height: int = 200
@@ -40,7 +43,7 @@ class Config:
             return cls(
                 sample_fps=2.0,
                 det_model="PP-OCRv5_mobile_det",
-                det_max_width=960,
+                det_max_side=960,
             )
         if mode == "precise":
             return cls(
@@ -51,6 +54,6 @@ class Config:
                 scene_threshold=0.06,
                 # server det at original 1080p does not complete (>30min per
                 # frame, measured); 1280 keeps server-det quality feasible.
-                det_max_width=1280,
+                det_max_side=1280,
             )
         return cls()

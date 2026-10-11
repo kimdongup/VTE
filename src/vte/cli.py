@@ -37,7 +37,7 @@ def main(argv: list[str] | None = None) -> int:
         p.add_argument("--rec-model", type=str, default=None, help="PaddleOCR recognition model name")
         p.add_argument("--det-model", type=str, default=None, help="PaddleOCR detection model name")
         p.add_argument("--roi-band", type=str, default=None, help="ROI band tuple, e.g. '0.6,1.0'")
-        p.add_argument("--det-max-width", type=int, default=None, help="Detection max width downscale")
+        p.add_argument("--det-max-side", type=int, default=None, help="Detection longest-side downscale cap (px)")
         p.add_argument("--min-box-height", type=int, default=None, help="Minimum box height in pixels")
         p.add_argument("--max-box-height", type=int, default=None, help="Maximum box height in pixels")
         p.add_argument("--line-target-height", type=int, default=None, help="Normalized line target height in pixels")
@@ -58,7 +58,7 @@ def main(argv: list[str] | None = None) -> int:
         for key in [
             "sample_fps", "scene_threshold", "iou_threshold", "sim_threshold",
             "debounce_gap", "min_duration", "conf_threshold", "logo_ratio",
-            "vote_frames", "rec_model", "det_model", "det_max_width",
+            "vote_frames", "rec_model", "det_model", "det_max_side",
             "min_box_height", "max_box_height", "line_target_height",
             "max_side", "min_rec_height", "max_rec_height", "crop_change_threshold"
         ]:
