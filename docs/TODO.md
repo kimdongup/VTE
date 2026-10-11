@@ -4,6 +4,16 @@
 
 ## 다음 작업
 
+- [x] 웹 UI (`vte ui`) — 창8
+  - [x] stdlib `http.server` 기반 서버 + 정적 파일 제공(외부 웹 프레임워크 의존 없음)
+  - [x] 레이아웃: 상단 화면 진행(영상/진행바/검출 박스 오버레이) + 하단 추출 텍스트
+  - [x] Google Flow 풍 디자인 토큰(`ui/static/css/app.css`)
+  - [x] 프론트 모듈화: `js/core/registry.js` 패널 레지스트리, `js/panels/*` 4개 패널
+  - [x] 백엔드 모듈화: `ui/features/` 기능 라우트(extraction/stream/media/export)
+  - [x] SSE 진행 스트리밍(`/api/events`), 잡 취소, SRT/TXT/JSON/ASS 내보내기
+  - [x] 영상 미리보기 HTTP Range(206) — 브라우저 탐색 즉각 반응
+  - [x] 테스트: `tests/test_ui.py` 31개 + `tests/smoke_ui.py`, `tests/smoke_sse.py`, `tests/smoke_media.py`
+
 - [x] M0 스캐폴딩 (coder)
   - [x] pyproject.toml, requirements.txt, 패키지 골격
   - [x] config.py (fast/auto/precise 프리셋), models.py
@@ -23,7 +33,7 @@
         fast+roi+960 **×0.64 실시간 돌파** — 단 roi+960 텍스트 붕괴로 프리셋 부적합
 - [x] 리팩터: tracker/segmenter(창1), pipeline RecognitionCoordinator 분리(창3),
       Track 인계 구조(starting/close_track)(창5)
-- [x] det 병목 개선: fast=PP-OCRv5_mobile_det + roi_band + det_max_width (창5~6)
+- [x] det 병목 개선: fast=PP-OCRv5_mobile_det + roi_band + det_max_side (창5~6)
 - [x] 소형 텍스트 rec 품질 개선 — crop h<48 업스케일 ('오늘 어떤 도움을 드릴까요?' 회복)
 - [x] **roi 조합 품질 붕괴 해소** — line target height 48px 및 min height 방어 적용 (창7)
 - [x] rec crop 폭 캡 — paddle max_side_limit 4000 경고 해소 및 _normalize_line w<=2000 클램프 (창7)
@@ -32,7 +42,7 @@
 - [x] test_integration.py의 scene_threshold 우회 제거 + mock 내용 매핑화 (창5)
 - [x] 회귀 보강: tracker.split/extend_static 단위테스트, crop 변화 회귀 (창5)
 - [x] 실영상 첫 1분 골든 JSON 고정 — tests/golden/first60s.json, 20 이벤트 (창6)
-- 백로그: SORT 추적기, VLM 백엔드, 클라우드 OCR 하이브리드, GUI, 스크롤 티커
+- 백로그: SORT 추적기, VLM 백엔드, 클라우드 OCR 하이브리드, 스크롤 티커, UI 부가 기능
 
 ## 결함 보고 (tester → coder)
 

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, fields, replace
 from typing import Literal
 
 Mode = Literal["fast", "auto", "precise"]
@@ -57,3 +57,18 @@ class Config:
                 det_max_side=1280,
             )
         return cls()
+
+    @classmethod
+    def with_overrides(cls, mode: Mode, overrides: dict | None = None) -> "Config":
+        """프리셋 모드 위에 키-값 오버라이드를 적용한다 (UI/CLI 공용).
+
+        알 수 없는 키는 ValueError — 잘못된 입력을 조기에 알린다.
+        """
+        cfg = cls.for_mode(mode)
+        if not overrides:
+            return cfg
+        valid = {f.name for f in fields(cls)}
+        unknown = sorted(set(overrides) - valid)
+        if unknown:
+            raise ValueError(f"unknown config keys: {', '.join(unknown)}")
+        return replace(cfg, **overrides)

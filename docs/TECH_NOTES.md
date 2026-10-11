@@ -245,3 +245,14 @@ bounding rect로 변환한다(회전 텍스트는 후순위).
   - `_clamp_size` 수행 시 `h >= 48`인 이미지의 높이가 폭 클램핑 과정에서 48px 미만으로 무너지는 현상을 막기 위해 최소 높이(48px) 보장 guard 적용.
 - **Score 합성**: `best_text`가 투표율과 `track.scores`의 평균을 결합하여 `confidence = round(vote_ratio * avg_score, 4)` 형태로 실제 OCR 엔진 정확도를 출력에 반영.
 
+## Web UI (2026-10-09)
+
+- **의존성 없음**: `vte ui`는 Python 표준 라이브러리 `http.server`만 사용한다. Flask/FastAPI/Electron 등 외부 웹 프레임워크나 GUI 툴킷을 추가하지 않았다(지원 환경 제약: "프레임 샘플링·추적·세그먼트 로직은 OpenCV/numpy/rapidfuzz만 사용"과 무관하게, UI 계층은 표준 라이브러리로 해결).
+- **백엔드 모듈 구조**: `ui/server.py`(라우터·SSE·정적 파일) + `ui/app.py`(잡 생명주기) + `ui/features/*`(기능 라우트). 새 API 추가 시 `features/` 에 모듈 하나를 만들고 `features/__init__.py`의 `FEATURES` 튜플에 한 줄 추가하면 끝난다. 서버 코어는 수정하지 않는다.
+- **프론트 모듈 구조**: `js/core/registry.js`의 `App` 객체가 패널 레지스트리 + 이벤트 버스(`App.on/emit`) + 공유 상태(`App.state`) + 명령(`App.commands`)을 제공. 패널 계약은 `{ name, mountPoint, mount(el, App) }`. 새 패널은 `js/panels/`에 파일 하나 + `js/app.js`에 import/register 두 줄.
+- **이벤트 흐름**: 브라우저는 `EventSource`로 `/api/events`에 연결하고 `snapshot/progress/done/error`를 받는다. 잡이 없을 땐 서버가 ping을 보내 연결을 유지한다(EventSource 무한 재연결 방지). 파이프라인 `run_extract`에 `progress_callback`을 넘겨 `ProgressUpdate`(ts, duration, detections, active)를 발행한다.
+- **OCR 엔진 격리 유지**: UI는 `pipeline.run_extract`만 호출하며 PaddleOCR을 직접 임포트하지 않는다(AGENTS.md의 엔진 격리 규칙 준수).
+- **영상 재생 동기화**: 미리보기 패널은 `p.ts`를 `video.currentTime`에 맞추되, 사용자가 직접 스크럽 중(`seeking`)이거나 오차 0.4초 이내면 덮어쓰지 않는다.
+- **`/api/media` Range(206) 지원**: `_parse_range`가 `bytes=start-end` / `bytes=start-` / `bytes=-N` 세 형태를 (start, end)로 바꾼다. 해석 불가·역전·size 밖이면 None을 돌려 전체 200으로 응답한다(브라우저 호환성). 멀티 레인지는 첫 구간만 취급 — 브라우저 미디어 요청은 단일 구간이다. 응답은 `Response.headers`에 `Accept-Ranges`/`Content-Range`를 얹는 것으로 끝나므로 서버 코어는 건드리지 않는다.
+- **디자인 토큰**: `app.css`의 `:root` 변수(표면/텍스트/액센트/반경/그림자/폰트)만 교체하면 테마가 바뀐다. 배경 오로라 글로우는 `body::before`의 방사형 그라데이션 2개.
+

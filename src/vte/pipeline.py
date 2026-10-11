@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
+from dataclasses import dataclass
 
 import cv2
 import numpy as np
@@ -13,9 +14,26 @@ from .postprocess import is_mostly_korean, normalize
 from .preprocess import crop_box, enhance
 from .recognizer import Recognizer
 from .scene_detector import SceneDetector
-from .segmenter import build_events, drop_logos
+from .segmenter import best_text, build_events, drop_logos
 from .tracker import RegionTracker
 from .video_reader import VideoReader
+
+
+@dataclass
+class ProgressUpdate:
+    """파이프라인 샘플 하나의 진행 스냅샷 (UI 진행 표시용).
+
+    ``closed`` 는 완료된 트랙 기준 확정 구간 전체 리스트이며, 매 스냅샷마다
+    tracker.finished 전체에서 다시 계산되므로 누적·병합 로직이 필요 없다.
+    """
+
+    ts: float
+    duration: float
+    frame_idx: int
+    processed: bool  # False = 장면전환으로 건너뛴 정적 샘플
+    detections: list[list[tuple[float, float]]]
+    active: list[dict]
+    closed: list[dict]
 
 # A crop is re-recognized only when its content changed since the last
 # recognition. Change is measured as mean absolute difference between small
@@ -168,8 +186,17 @@ def run_extract(
     cfg: Config | None = None,
     start: float = 0.0,
     end: float | None = None,
+    on_progress: Callable[[ProgressUpdate], None] | None = None,
+    should_stop: Callable[[], bool] | None = None,
 ) -> list[TextEvent]:
-    """End-to-end pipeline: frames -> boxes -> tracks -> events."""
+    """End-to-end pipeline: frames -> boxes -> tracks -> events.
+
+    ``on_progress`` (선택): 샘플 처리마다 :class:`ProgressUpdate`를 전달한다.
+    UI 진행 표시용이며 콜백이 없으면 기존과 동일하게 동작한다.
+
+    ``should_stop`` (선택): 샘플 루프 진입 전에 True를 반환하면 현재까지의
+    트랙(활성 포함)으로 이벤트를 만들어 조기 종료한다.
+    """
     cfg = cfg or Config()
     reader = VideoReader(video_path, cfg.sample_fps)
     detector = TextDetector(cfg)
@@ -181,19 +208,53 @@ def run_extract(
     frame_idx = 0
     prev_layout: list[list[tuple[float, float]]] = []
 
+    def emit(ts: float, processed: bool, boxes: list[TextBox]) -> None:
+        if on_progress is None:
+            return
+        active = []
+        for t in tracker.tracks:
+            if not t.texts:
+                continue
+            box = t.last_box
+            active.append({
+                "id": t.id,
+                "text": t.texts[-1],
+                "start": t.start_ts,
+                "end": t.end_ts,
+                "rect": list(box.rect) if box else None,
+            })
+        closed = []
+        for t in tracker.finished:
+            text, conf = best_text(t, cfg.vote_frames)
+            if text:
+                closed.append({"id": t.id, "start": t.start_ts, "end": t.end_ts, "text": text, "confidence": conf})
+        on_progress(ProgressUpdate(
+            ts=ts,
+            duration=reader.duration,
+            frame_idx=frame_idx,
+            processed=processed,
+            detections=[b.pts for b in boxes],
+            active=active,
+            closed=closed,
+        ))
+
     for sample in reader:
         ts = sample.timestamp
         if ts < start or (end is not None and ts > end):
             continue
+        if should_stop is not None and should_stop():
+            break
         if not scene.should_process(sample.image, prev_layout):
             # Static frame: every healthy track still covers this timestamp.
             tracker.extend_static(ts)
+            emit(ts, False, [])
             frame_idx += 1
             continue
         boxes = detector.detect(sample.image)
         prev_layout = [b.pts for b in boxes]
         tracker.update(frame_idx, ts, boxes)
         coordinator.process_frame(frame_idx, ts, sample.image, tracker.tracks)
+        emit(ts, True, boxes)
         frame_idx += 1
     reader.close()
 

@@ -5,10 +5,13 @@
 - 성능 (claude_first60s, CPU i9, OMP_NUM_THREADS=8):
   - fast(mobile+960): **×2.64** — 골든 20개 이벤트 무손실 재현
   - fast+roi+960: **×0.64 (실시간 돌파)** — 단 텍스트 붕괴('지침 저 -')로 프리셋 부적합
-  - server det: 1080p 원본 불가 → det_max_width=1280으로 회복(~65s/frame)
+  - server det: 1080p 원본 불가 → det_max_side=1280으로 회복(~65s/frame)
 - 소형 텍스트 rec 개선(h<48 업스케일): '오늘 어떤 도움을 드릴까요? [0.95]' 수준 회복
 - 골든 JSON: `tests/golden/first60s.json` (fast 모드, 20 이벤트, 결정적 재현 확인)
-- 테스트: **88 passed + 1 skipped** (골든 라이브 비교는 VTE_GOLDEN_LIVE=1 게이트)
+- 테스트: **120 passed + 2 skipped** (골든 라이브 비교는 VTE_GOLDEN_LIVE=1 게이트)
+- 웹 UI 신설(`vte ui`): 상단 화면 진행(영상+진행바+검출 박스) / 하단 추출 텍스트
+  - Google Flow 풍 디자인(어두운 배경, 글래스 패널, 청→보라 그라데이션 액센트)
+  - 패널 레지스트리(`js/core/registry.js`) + 기능 라우트 레지스트리(`ui/features/`)로 모듈 확장
 
 ## 에이전트 창 이력
 
@@ -19,8 +22,9 @@
 | 3 | DEFECT-1·2 해결 | +19 테스트(72) | — | — |
 | 4 | 어순 결함 근본 해결 | — | pipeline 분리 | BENCHMARK.md 생성 |
 | 5 | mobile det + roi_band | integration 정리+split 테스트(83) | Track 인계 구조 | 실영상 첫 1분 검증 |
-| 6 | det_max_width + 소형rec 개선 | detector 규약 + 골든 JSON(87) | — | 재측정 ×0.64 |
+| 6 | det_max_side + 소형rec 개선 | detector 규약 + 골든 JSON(87) | — | 재측정 ×0.64 |
 | 7 | ASS 타임스탬프 + rec 48px/2000px cap + score 합성 | +1 테스트 (88) | — | — |
+| 8 | 웹 UI 신설 (모듈식 패널/라우트, Google Flow 풍, media Range) | UI 테스트 31개 추가 (119) | — | — |
 
 ## 남은 과제
 

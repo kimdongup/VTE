@@ -26,7 +26,22 @@
 - 2026-08-25: 실영상 첫 1분 검증(claude.ai UI 녹화, 1080p). fast(mobile
   det) ×5.38배, +roi_band ×2.64배로 개선. server det은 1080p에서 사실상
   불가(30분+ 타임아웃). 한글 하드자막 아닌 한국어 UI 텍스트 검출 확인.
-- 2026-08-25: 창6 — det_max_width 도입(fast=mobile+960) + 소형 텍스트
+- 2026-08-25: 창6 — det_max_side 도입(fast=mobile+960) + 소형 텍스트
   rec 업스케일(h<48). 재측정: fast ×5.38→×2.64, fast+roi ×2.64→×0.64
   (실시간 돌파, 단 roi+960 조합은 텍스트 붕괴로 프리셋 부적합).
   골든 JSON(tests/golden/first60s.json) 확정, 87 passed.
+- 2026-10-09: 창8 — 웹 UI 신설(`vte ui`, 브라우저 실행). stdlib `http.server`
+  기반이므로 웹 프레임워크 의존성 없음. 상단 화면 진행(영상/진행바/검출
+  박스 오버레이) + 하단 추출 텍스트 레이아웃. Google Flow 풍 디자인 토큰.
+  프론트는 `js/core/registry.js` 패널 레지스트리(controls/preview/transcript/
+  exporter), 백엔드는 `ui/features/` 기능 라우트 레지스트리(extraction/
+  stream/media/export)로 모듈 추가가 각각 한 줄씩. SSE 진행 스트리밍,
+  잡 취소, SRT/TXT/JSON/ASS 내보내기 지원. `/api/media`는 Range(206)를
+  지원해 브라우저 탐색이 즉각 반응한다. 테스트 31건 추가 → 119 passed.
+- 2026-10-10: 세로(portrait) 영상 det 버그 수정 — `det_max_width`(폭 기준
+  다운스케일)를 `det_max_side`(긴 변 기준)로 변경. 세로 영상(예: 모바일 화면
+  녹화 826x1460)은 폭 826 < 상한 960이라 폭 기준으로는 축소가 아예 스킵되어
+  매 프레임을 원본 1460px 높이로 검출하던 문제(프레임당 7.3s)를 긴 변 기준으로
+  해결(프레임당 ~3s). 가로 영상(1920x1080)은 폭=최대 변이라 기존 결과와
+  동일(회귀 없음, 골든 무손실). CLI 플래그도 `--det-max-side`로 정정.
+  detector 옵션 테스트에 portrait 케이스 추가 → 120 passed.

@@ -1,5 +1,6 @@
 # Environments
 .venv/
+.venvocr/
 venv/
 env/
 ENV/

@@ -32,3 +32,11 @@ numpy/OpenCV만으로 테스트 가능하게 유지 → CI와 엔진 교체(Easy
 - `recognizer.py` line normalization 타깃 높이를 48px로 고정하고 `_clamp_size`에서 폭(w) 클램핑 시 최소 높이 48px를 보장하여 PaddleOCR `max_side_limit(4000)` 경고 및 와이드 자막/UI 텍스트 붕괴 현상 근본 해소.
 - `best_text`에서 투표 비율과 실엔진 OCR 스코어(`track.scores`)를 결합하여 유의미한 `confidence` 반환.
 
+## D6. 웹 UI는 표준 라이브러리 `http.server` + ES 모듈로 구현 (2026-10-09)
+
+- **선택지**: ① 데스크톱 GUI(tkinter/PySide) ② 웹 프레임워크(Gradio/Streamlit/FastAPI) ③ 표준 라이브러리 웹 서버. ③을 택했다.
+- 근거: 배포 대상은 "CPU 우선"의 범용 환경이다. ①은 원격/헤드리스 실행에서 무의미하고 의존성이 크다. ②는 서버 실행 시 자동으로 끌어오는 무거운 스택(및 버전 고정 리스크)이 생기고, 파이프라인과 엔진을 이미 격리해 둔 구조와 맞지 않는다. ③은 `http.server` + `threading`만으로 SSE·정적 파일·Range 요청(영상 스트리밍)을 모두 처리할 수 있어 **의존성 추가 0**이다.
+- **영상 미리보기는 HTTP Range 스트리밍**으로 구현했다. 프레임을 PNG로 인코딩해 밀어넣는 방식은 서버 메모리와 인코딩 비용이 크고 탐색(seek)이 느리다. `<video src="/api/media?path=...">` 한 줄로 브라우저가 직접 디코딩하게 하면 스크럽이 즉각 반응한다.
+- **프론트/백엔드 모두 레지스트리 패턴**으로 모듈 추가 비용을 한 줄로 고정했다. 패널은 `{name, mountPoint, mount(el, App)}`, 기능 라우트는 `register(router, app)` 계약이며 코어를 수정하지 않는다.
+- **디자인은 Google Flow 계열 토큰**(어두운 표면, 글래스 패널, 청→보라 그라데이션)으로 통일. `app.css`의 `:root` 변수 집합이 단일 진실 공급원이다.
+

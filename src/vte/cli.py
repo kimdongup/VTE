@@ -49,7 +49,17 @@ def main(argv: list[str] | None = None) -> int:
     common(sub.add_parser("extract", help="detect intervals and OCR text"))
     common(sub.add_parser("intervals", help="list text-present intervals only"))
 
+    ui = sub.add_parser("ui", help="launch local web UI (browser)")
+    ui.add_argument("--host", default="127.0.0.1", help="bind address (default: local only)")
+    ui.add_argument("--port", type=int, default=8765)
+    ui.add_argument("--no-browser", action="store_true", help="do not open the default browser")
+
     args = parser.parse_args(argv)
+    if args.command == "ui":
+        from .ui import run_ui
+
+        run_ui(host=args.host, port=args.port, open_browser=not args.no_browser)
+        return 0
     try:
         from .pipeline import run_extract
 

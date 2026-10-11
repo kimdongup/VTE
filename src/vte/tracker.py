@@ -153,6 +153,11 @@ class RegionTracker:
             if track.id not in self._missed:
                 track.end_ts = ts
 
+    @property
+    def finished(self) -> list[Track]:
+        """Read-only view of tracks retired so far (progress reporting)."""
+        return list(self._finished)
+
     def finish_all(self) -> list[Track]:
         self._finished.extend(self.tracks)
         self.tracks.clear()
